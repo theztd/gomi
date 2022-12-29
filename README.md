@@ -1,5 +1,7 @@
 # **Go**mi
 
+[![Release](https://github.com/theztd/gomi/actions/workflows/release.yml/badge.svg)](https://github.com/theztd/gomi/actions/workflows/release.yml)
+
 Lightweight GOlang utility for auto-commiting uncommited changes in given repositories with reporting in node_exporter (tex-file) format
 
 ## Use case
@@ -27,6 +29,22 @@ Gomi wil check the dir **/etc/nginx/sites-enabled/** and report state to file **
 gomi -path /etc/nginx/sites-enabled/ -prom-path /tmp/metrics/gomi_nginx-sites.txt
 ```
 
+**Example how the commit looks like**
+
+```bash
+commit 69ce2a794ba7b5f152e60ffa24e71d65cd4f0950
+Author: Automat <automat@gin05>
+Date:   Thu Dec 29 12:24:08 2022 +0000
+
+----- Detail -----
+ M README.md
+?? Makefile
+?? git/
+?? go.mod
+?? main.go
+?? node_exporter.go
+```
+
 ## Install
 
 ### Requirements
@@ -39,8 +57,30 @@ gomi -path /etc/nginx/sites-enabled/ -prom-path /tmp/metrics/gomi_nginx-sites.tx
 
 **TODO:** add example how to configure whole env to be able run gomi from cron
 
+
+**Don't forget to set required privileges in gitlab / github /.. .**
+
 ### Baseauth Git
 
-**TODO:** add example how to configure whole env to be able run gomi from cron
+**.git/config**
+```toml
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "origin"]
+	url = https://automat:paSSSSSSSSwOOOOOOOOOrd@gitlab.com/theztd/example.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "master"]
+	remote = origin
+	merge = refs/heads/master
+```
 
+**Don't forget to set required privileges in gitlab / github /.. .**
 
+Cron job example
+
+```cron
+50  *  *  *  *       /usr/local/bin/gomi -path /opt/project_dir -prom-path /var/metrics/gomi-project_dir.prom &>> /var/log/gomi.log
+```
