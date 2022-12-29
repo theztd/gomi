@@ -1,0 +1,74 @@
+/*
+	ta implementace git baliku je priserne pomala, 
+	4 soubory v repu a ziskani statusu trva prez 20 vterin 
+	stoj Linux amd64 plotnove disky, ma M1 airu to byly cca 2s (i to neni malo)
+*/
+
+
+func CommitIfChangedOld(path string, check bool) (err error) {
+	r, err := git.PlainOpen(path)
+	if err != nil {
+		log.Println("ERR:", "Unable to open repo", err)
+		return err
+	}
+
+	wt, err := r.Worktree()
+	if err != nil {
+		log.Println("ERR: ", err)
+		return err
+	}
+
+	fStat, _ := wt.Status()
+
+	/*
+		If repo is not clean, do commit and push
+	*/
+	if !fStat.IsClean() {
+		// Create commit message from the state before commit
+		hostname, _ := os.Hostname()
+		cMsg := fmt.Sprintf("Auto: From %s at %s\n------  Detail  ------\n%s", hostname, time.Now().Format("2006-02-01 15:04"), fStat)
+
+		if check {
+			log.Println("Dry Run mode has been enabled... Exiting!")
+			return nil
+		}
+		// Add all files and commit
+		// git add .
+		_, err := wt.Add(".")
+		if err != nil {
+			log.Println("ERR: ", err)
+			return err
+		}
+
+		// git commit -am "title and detail"
+		commit, err := wt.Commit(cMsg, &git.CommitOptions{
+			Author: &object.Signature{
+				Name:  "Git Watch (from gin05)",
+				Email: "git-watch@gin05.vas-server.cz",
+				When:  time.Now(),
+			},
+		})
+		if err != nil {
+			log.Println("ERR: ", err)
+			return err
+		}
+
+		// Create commit of the changes
+		obj, err := r.CommitObject(commit)
+		if err != nil {
+			log.Println("ERR: ", err)
+			return err
+		}
+		log.Println("OBJ: ", obj)
+
+		// Push changes
+		err = r.Push(&git.PushOptions{})
+		if err != nil {
+			log.Println("ERR: ", err)
+			return err
+		}
+		return fmt.Errorf("All changes has been commited")
+	}
+
+	return nil
+}
